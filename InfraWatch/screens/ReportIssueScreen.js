@@ -4,6 +4,9 @@ import { Picker } from '@react-native-picker/picker';
 //import * as ImagePicker from 'expo-image-picker';
 import MapComponent from '../components/MapComponent';
 import { useReportData } from '../context/DataContext';
+import * as Haptics from 'expo-haptics';
+
+
 
 function ReportIssueScreen({ navigation }) {
   const [reportTitle, setReportTitle] = useState('');
@@ -37,6 +40,20 @@ function ReportIssueScreen({ navigation }) {
     // Reset state or navigate to a different screen
     navigation.goBack();
   };
+
+  //TODO: Implement Haptic feedback. You can implment onPress={triggerImpact} on the buttons
+  // const triggerImpact = () => {
+  //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  // };
+
+  // const triggerNotification = () => {
+  //   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  // };
+
+  // const triggerSelection = () => {
+  //   Haptics.selectionAsync();
+  // };
+
 
   return (
     <View style={styles.container}>
