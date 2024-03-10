@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Button, View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useFocusEffect } from 'react';
+import { View, Text, Button, StyleSheet, Image, TouchableOpacity } from 'react-native';
 //import Icon from 'react-native-vector-icons/FontAwesome';
 import { ScrollView } from 'react-native';
 import { Icon } from 'react-native-elements'
 import { auth, db } from '../firebaseConfig';
-import { getDatabase, ref, onValue } from "firebase/database";
+import { getDatabase, ref, onValue, get } from "firebase/database";
 import * as Location from 'expo-location';
 
 
@@ -15,8 +15,24 @@ function DashboardScreen({ navigation }) {
     const [reportsSubmitted, setReportsSubmitted] = useState(0);
     const [resolvedIssues, setResolvedIssues] = useState(0);
     const [userId, setUserId] = useState('');
+
+    const requestLocationPermission = async () => {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Denied', 'Unable to access the location. Please allow location access.');
+          return false;
+        }
+        return true;
+    };
     
     const getReadableLocation = async (latitude, longitude) => {
+        const permissionGranted = await requestLocationPermission();
+        if (!permissionGranted) {
+            // Handle the case when permissions are not granted
+            console.log("Location permissions are not granted.");
+            return;
+        }
+        
         try {
             const results = await Location.reverseGeocodeAsync({ latitude, longitude });
             if (results.length > 0) {
@@ -31,23 +47,42 @@ function DashboardScreen({ navigation }) {
     };
 
     useEffect(() => {
+        const db = getDatabase();
+    
+        const fetchReports = async (userReports) => {
+            const fetchedReports = [];
+        
+            for (const reportId of Object.keys(userReports)) {
+                console.log(`Fetching report: ${reportId}`);
+                // Directly access each report using its ID
+                const reportSnapshot = await get(ref(db, `reports/${reportId}`));
+                if (reportSnapshot.exists()) {
+                    const reportData = reportSnapshot.val();
+                    console.log(`Fetched data for report ${reportId}:`, reportData);
+                    // Optionally, fetch and format location data here
+                    const readableLocation = reportData.location
+                      ? await getReadableLocation(reportData.location.latitude, reportData.location.longitude)
+                      : "Location unavailable";
+                    fetchedReports.push({ ...reportData, readableLocation, id: reportId });
+                }
+            }
+            
+            setReports(fetchedReports);
+            setReportsSubmitted(fetchedReports.length);
+        };
+    
         const user = auth.currentUser;
         if(user) {
             setUserId(user.uid);
-            const userProfileRef = ref(getDatabase(), `users/${user.uid}/profile`);
-
+            const userProfileRef = ref(db, `users/${user.uid}/profile`);
+    
             onValue(userProfileRef, async (snapshot) => {
                 const data = snapshot.val();
                 if (data && data.userReports) {
-                    const reportsWithLocation = await Promise.all(Object.values(data.userReports).map(async report => {
-                      if(report.location) {
-                        const readableLocation = await getReadableLocation(report.location.latitude, report.location.longitude);
-                        return { ...report, readableLocation };
-                      }
-                      return report;
-                    }));
-                    setReports(reportsWithLocation);
-                    setReportsSubmitted(data.reportCount || 0);
+                  await fetchReports(data.userReports);
+                } else {
+                  setReports([]);
+                  setReportsSubmitted(0);
                 }
             });
         }

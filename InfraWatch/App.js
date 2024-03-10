@@ -1,16 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View,useColorScheme } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './navigation/AppNavigator';
 import { DataProvider } from './context/DataContext';
 import { db, auth } from './firebaseConfig';
 import AuthScreen from './screens/AuthScreen';
+import { StatusBar } from "expo-status-bar";
+
 
 
 
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+
+
+  // const [loaded] = useFonts({
+  //   Inter: require("@tamagui/font-inter/otf/Inter-Medium.otf"),
+  //   InterBold: require("@tamagui/font-inter/otf/Inter-Bold.otf"),
+  // });
+  // if (!loaded) {
+  //   return null;
+  // }
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -34,11 +45,11 @@ export default function App() {
   }
 
   return (
-    <DataProvider>
-      <NavigationContainer>
-        {user ? <AppNavigator /> : <AuthScreen />}
-      </NavigationContainer>
-    </DataProvider>
+        <DataProvider>
+            <NavigationContainer>
+              {user ? <AppNavigator /> : <AuthScreen />}
+            </NavigationContainer>
+        </DataProvider>
   );
 }
 

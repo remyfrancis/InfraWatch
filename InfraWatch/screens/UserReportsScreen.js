@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, Text, StyleSheet, ActivityIndicator, Image  } from 'react-native';
-import { getDatabase, ref, query, orderByKey, limitToLast, startAfter, get } from 'firebase/database';
+import { View, Button, FlatList, Text, StyleSheet, ActivityIndicator, Image, Alert  } from 'react-native';
+import { getDatabase, ref, query, orderByKey, limitToLast, startAfter, get, remove, runTransaction } from 'firebase/database';
+import { auth } from '../firebaseConfig';
+import * as Location from 'expo-location';
 
 const PAGE_SIZE = 10; // Number of reports to fetch per page
 
@@ -10,44 +12,143 @@ const UserReportsScreen = ({ navigation }) => {
   const [lastKey, setLastKey] = useState('');
   const [allLoaded, setAllLoaded] = useState(false);
 
-  const fetchReports = async () => {
-    if (loading || allLoaded) return;
-  
-    setLoading(true);
-    const db = getDatabase();
-    let queryConstraints = [orderByKey(), limitToLast(PAGE_SIZE + 1)]; // +1 to check if there's more
-    if (lastKey) queryConstraints.push(startAfter(lastKey));
-  
-    const reportsQuery = query(ref(db, 'reports'), ...queryConstraints);
-    const snapshot = await get(reportsQuery);
-  
-    if (!snapshot.exists()) {
-      setAllLoaded(true);
+  const fetchUserReports = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      console.log("No user logged in");
       setLoading(false);
       return;
     }
-  
-    const fetchedReports = [];
-    let newLastKey = '';
-    snapshot.forEach((childSnapshot) => {
-      newLastKey = childSnapshot.key;
-      fetchedReports.unshift(childSnapshot.val()); // unshift to reverse the order
+
+    setLoading(true);
+    const db = getDatabase();
+    // Adjusted path to user's reports references under their profile
+    const userProfilePath = `users/${currentUser.uid}/profile/userReports`;
+
+    get(ref(db, userProfilePath)).then(async (snapshot) => {
+      if (snapshot.exists()) {
+        const userReportsData = snapshot.val();
+        // Fetch each report by ID stored in userReports
+        const reportsFetchPromises = Object.keys(userReportsData).map((reportId) => {
+          return get(ref(db, `reports/${reportId}`));
+        });
+
+        const reportsSnapshots = await Promise.all(reportsFetchPromises);
+        const reports = reportsSnapshots.map((reportSnapshot, index) => {
+          if (reportSnapshot.exists()) {
+            const reportData = reportSnapshot.val();
+            // Enhance with readable location if needed
+            return { ...reportData, id: Object.keys(userReportsData)[index] }; // or simply use reportId
+          }
+          return null; // or handle non-existing report differently
+        }).filter(report => report !== null); // Filter out nulls if the report wasn't found
+
+        // Optionally: Enhance each report with a readable location
+        const reportsWithLocationPromise = reports.map(async report => {
+          if (report.location) {
+            report.readableLocation = await getReadableLocation(report.location.latitude, report.location.longitude);
+          }
+          return report;
+        });
+
+        Promise.all(reportsWithLocationPromise).then(reportsWithLocation => {
+          setReports(reportsWithLocation);
+          setLoading(false);
+        });
+
+      } else {
+        console.log("No user reports found in profile");
+        setReports([]);
+        setLoading(false);
+      }
+    }).catch(error => {
+      console.error("Failed to fetch user reports from profile: ", error);
+      setLoading(false);
     });
-  
-    // Remove one item if we fetched PAGE_SIZE + 1 reports to maintain correct pagination
-    if (fetchedReports.length > PAGE_SIZE) {
-      fetchedReports.shift(); // Remove the first item which is beyond our page limit
-    } else {
-      setAllLoaded(true); // If we fetched <= PAGE_SIZE reports, we've reached the end
-    }
-  
-    setReports(prevReports => [...fetchedReports, ...prevReports]);
-    setLastKey(newLastKey);
-    setLoading(false);
   };
 
+  // Delete Reports
+  const deleteReport = async (reportId) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      Alert.alert("Error", "You must be logged in to perform this action.");
+      return;
+    }
+
+    const db = getDatabase();
+    // Remove the report from the global reports collection
+    const globalReportRef = ref(db, `reports/${reportId}`);
+    await remove(globalReportRef).catch((error) => {
+      console.error("Failed to delete report from global reports: ", error);
+      Alert.alert("Error", "Failed to delete report.");
+    });
+
+    // Remove the report reference from the user's profile
+    const userReportRef = ref(db, `users/${currentUser.uid}/profile/userReports/${reportId}`);
+    await remove(userReportRef).catch((error) => {
+      console.error("Failed to delete report reference from user profile: ", error);
+      Alert.alert("Error", "Failed to delete report reference.");
+    });
+
+    // Then, decrement the reportCount atomically using a transaction
+    const reportCountRef = ref(db, `users/${currentUser.uid}/profile/reportCount`);
+    runTransaction(reportCountRef, (currentCount) => {
+      // Ensure the currentCount is not undefined and greater than 0 before decrementing
+      if (currentCount > 0) {
+        return currentCount - 1;
+      } else {
+        // In case currentCount is undefined or not greater than 0, do not decrement
+        return currentCount;
+      }
+    }).then(() => {
+      Alert.alert("Success", "Report deleted successfully.");
+      // Refresh the list after deletion and reportCount update
+      fetchUserReports();
+    }).catch((error) => {
+      console.error("Failed to decrement reportCount: ", error);
+      Alert.alert("Error", "Failed to update report count.");
+    });
+  };
+
+
+
+  // Edit Reports
+  const editReport = (reportId) => {
+    navigation.navigate('ReportEditScreen', { reportId });
+  };
+
+  const requestLocationPermission = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Unable to access the location. Please allow location access.');
+      return false;
+    }
+    return true;
+};
+
+  const getReadableLocation = async (latitude, longitude) => {
+    const permissionGranted = await requestLocationPermission();
+    if (!permissionGranted) {
+        // Handle the case when permissions are not granted
+        console.log("Location permissions are not granted.");
+        return;
+    }
+    
+    try {
+        const results = await Location.reverseGeocodeAsync({ latitude, longitude });
+        if (results.length > 0) {
+        // Format the address as needed; here, we're using the first result
+        const { city, street, region, country } = results[0];
+        return `${street ? street + ', ' : ''}${city ? city + ', ' : ''}${region ? region + ', ' : ''}${country}`;
+        }
+    } catch (error) {
+        console.error("Failed to get location: ", error);
+    }
+    return "Location unavailable"; // Default text or handling when the location can't be fetched
+};
+
   useEffect(() => {
-    fetchReports();
+    fetchUserReports();
   }, []);
   
 
@@ -58,20 +159,24 @@ const UserReportsScreen = ({ navigation }) => {
         data={reports.slice().reverse()} // Reverse the reports for display
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
-          <View style={styles.issueRow}>
-            <View style={styles.issueTextContainer}>
-              <Text style={styles.mediumText}>{item.title || 'No Reports Yet!'}</Text>
-              <Text>{item.readableLocation || 'Unknown Location'}</Text>
-              <Text>{item.details || 'No details provided'}</Text>
-            </View>
-            <View style={styles.imageContainer}>
-              <Image
-                style={styles.image}
-                source={{ uri: item.imageUrl || 'https://via.placeholder.com/100' }} // Fallback image URL
-              />
-            </View>
+        <View style={styles.issueRow}>
+          <View style={styles.issueTextContainer}>
+            <Text style={styles.mediumText}>{item.title || 'No Reports Yet!'}</Text>
+            <Text>{item.readableLocation || 'Unknown Location'}</Text>
+            <Text>{item.details || 'No details provided'}</Text>
           </View>
-        )}
+          <View style={styles.imageContainer}>
+            <Image
+              style={styles.image}
+              source={{ uri: item.imageUrl || 'https://via.placeholder.com/100' }}
+            />
+          </View>
+          <View style={styles.buttonContainer}>
+            <Button title="Edit" onPress={() => editReport(item.id)} />
+            <Button title="Delete" onPress={() => deleteReport(item.id)} />
+          </View>
+        </View>
+      )}
       />
     </View>
   );

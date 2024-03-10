@@ -39,6 +39,13 @@ const HelpAndFeedbackScreen = ({ navigation }) => {
         <Text style={styles.label}>Profile Setup</Text>
         <Icon name="chevron-right" size={20} />
       </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.settingRow} 
+        onPress={() => navigateToScreen('Authority Dashboard')}>
+        <Text style={styles.label}>Authority Dashboard</Text>
+        <Icon name="chevron-right" size={20} />
+      </TouchableOpacity>
     </View>
   );
 };

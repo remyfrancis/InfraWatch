@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import MapComponent from '../components/MapComponent';
 import { useReportData } from '../context/DataContext';
 import * as Haptics from 'expo-haptics';
 import { db, storage, auth } from '../firebaseConfig';
@@ -17,6 +16,17 @@ import {
   runTransaction
 } from "firebase/database";
 
+export const uploadFile = async (fileUri, path) => {
+  const response = await fetch(fileUri);
+  const blob = await response.blob();
+  const storage = getStorage();
+  const storageReference = storageRef(storage, path);
+  const snapshot = await uploadBytes(storageReference, blob);
+  const downloadUrl = await getDownloadURL(snapshot.ref);
+  console.log("image url: ", downloadUrl);
+  return downloadUrl;
+};
+
 function ReportIssueScreen({ navigation }) {
   const [reportTitle, setReportTitle] = useState('');
   const [reportDetails, setReportDetails] = useState('');
@@ -24,10 +34,39 @@ function ReportIssueScreen({ navigation }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [userReportCount, setUserReportCount] = useState(0);
   const [score, setScore] = useState(0);
+  const [urgency, setUrgency] = useState('Low');
 
+  
+
+  
 
   const { reportData, updateReportData } = useReportData();
 
+  const requestCameraPermissions = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Sorry, we need camera permissions to make this work.');
+      return false;
+    }
+    return true;
+  };
+
+  const takePhoto = async () => {
+    const hasCameraPermission = await requestCameraPermissions();
+    if (!hasCameraPermission) return;
+  
+    let result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+  
+    if (!result.canceled) {
+      uriList = result.assets.map((asset) => asset.uri);
+      setSelectedImage(uriList[0]);
+      console.log("Photo URI: ", uriList[0]);
+    }
+  };
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -42,24 +81,15 @@ function ReportIssueScreen({ navigation }) {
       aspect: [4, 3],
       quality: 1,
     });
-    console.log(result);
+    //console.log(result);
 
     if (!result.canceled) {
       uriList = result.assets.map((asset) => asset.uri);
       setSelectedImage(uriList[0]);
+      console.log("Image URI: ", uriList[0])
     }
   };
 
-  const uploadFile = async (fileUri, path) => {
-    const response = await fetch(fileUri);
-    const blob = await response.blob();
-    const storage = getStorage();
-    const storageReference = storageRef(storage, path);
-    const snapshot = await uploadBytes(storageReference, blob);
-    const downloadUrl = await getDownloadURL(snapshot.ref);
-    console.log("image url: ", downloadUrl);
-    return downloadUrl;
-  };
 
   const [userId, setUserId] = useState(null);
   const user = auth.currentUser;
@@ -70,80 +100,69 @@ function ReportIssueScreen({ navigation }) {
     }
   }, [user]);
 
-
+  // Handler for setting urgency
+  const selectUrgency = (level) => {
+    setUrgency(level);
+  };
 
   const handleSubmit = async () => {
-    // Submit your data here, you might want to validate the inputs before submission
-
-  let reportData;
-  const db = getDatabase();
-  const reportId = userId + Date.now().toString();
-
-
-  // Request location permission and get the current location
-  const { status } = await Location.requestForegroundPermissionsAsync();
-  if (status !== 'granted') {
-    Alert.alert('Permission Denied', 'Cannot fetch location without permission.');
-    return;
-  }
-
-    // Location Data Initialization
-    const location = await Location.getCurrentPositionAsync({});
-    const { latitude, longitude } = location.coords;
-
-
-
-    reportData = {
+    // Validate inputs before submission
+    if (!reportTitle || !reportDetails || !reportType) {
+      Alert.alert('Validation Failed', 'Please fill all the fields.');
+      return;
+    }
+  
+    // Request location permission and get the current location
+    let location = { latitude: null, longitude: null };
+    const locationStatus = await Location.requestForegroundPermissionsAsync();
+    if (locationStatus.status !== 'granted') {
+      Alert.alert('Permission Denied', 'Cannot fetch location without permission.');
+      return;
+    } else {
+      const currentLocation = await Location.getCurrentPositionAsync({});
+      location = {
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+      };
+    }
+  
+    // Handle image upload
+    let imageUrl = '';
+    if (selectedImage) {
+      imageUrl = await uploadFile(selectedImage, `photos/${userId}/${Date.now()}`);
+    }
+  
+    const db = getDatabase();
+    const reportRef = ref(db, 'reports');
+    const newReportKey = push(reportRef).key;
+  
+    const reportData = {
       userId: userId,
-      reportId: reportId,
+      reportId: newReportKey,
       title: reportTitle,
       details: reportDetails,
       type: reportType,
-      imageUrl: selectedImage,
+      imageUrl: imageUrl,
       score: score,
-      location: { latitude, longitude },
+      urgency: urgency,
+      location: location,
       createdAt: serverTimestamp(),
     };
-
-    if(selectedImage.length > 0) {
-      reportData.imageUrl = await uploadFile(selectedImage, `photos/${reportId}`);
-    }
-
-    const newReportRef = push(ref(db, 'reports'));
-    const userProfileRef = ref(db, `users/${userId}/profile`);
-    const userReportCountRef = ref(db, `users/${userId}/profile/reportCount`);
-
-    try {
-      await set(newReportRef, reportData);
-      runTransaction(userProfileRef, (currentData) => {
-        if(currentData) {
-        const reportCount = currentData.reportCount ? currentData.reportCount + 1 : 1;
-        const userReports = currentData.userReports ? currentData.userReports : {};
-        
-        userReports[newReportRef.key] = reportData;
-        
-        return { ...currentData, reportCount, userReports };
-        } else {
-          const userReports = {};
-          userReports[newReportRef.key] = reportData;
-          return { reportCount: 1, userReports };
-        }
-      }).then((result)=>{
-        if (result.committed) {
-          Alert.alert('Report Submitted', 'Your report has been submitted successfully!');
-          setReportTitle('');
-          setReportDetails('');
-          setReportType('road_damage');
-          setSelectedImage(null);
-          navigation.goBack();
-        } else {
-          console.log("Transaction not committed.");
-        }
-      })
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'An error occurred while submitting the report. Please try again.');
-    }
+  
+    // Add report to the global reports path
+    await set(ref(db, `reports/${newReportKey}`), reportData);
+  
+    // Add report ID reference to the user's profile
+    const userProfileRef = ref(db, `users/${userId}/profile/userReports/${newReportKey}`);
+    await set(userProfileRef, true);
+  
+    // Update user's report count if necessary
+    runTransaction(ref(db, `users/${userId}/profile/reportCount`), (currentCount) => {
+      return (currentCount || 0) + 1;
+    });
+  
+    Alert.alert('Report Submitted', 'Your report has been submitted successfully!');
+    navigation.goBack();
   };
 
   
@@ -152,7 +171,7 @@ function ReportIssueScreen({ navigation }) {
     // Reset state or navigate to a different screen
     setReportTitle('');
     setReportDetails('');
-    setReportType('road_damage');
+    setReportType('Select a report type');
     setSelectedImage(null);
 
     Alert.alert("Cancelled!", "Your report has been cancelled");
@@ -195,12 +214,27 @@ function ReportIssueScreen({ navigation }) {
           selectedValue={reportType}
           onValueChange={(itemValue, itemIndex) => setReportType(itemValue)}
           style={styles.picker}>
-          <Picker.Item label="Road Damage" value="road_damage" />
-          <Picker.Item label="Electricity Infrastructure Damage" value="electricity_infrastructure_damage" />
-          <Picker.Item label="Water Infrastructure Damage" value="water_infrastructure_damage" />
-          <Picker.Item label="Public Infrastructure Damage" value="public_infrastructure_damage" />
+          <Picker.Item label="Road Damage" value="Road Damage" />
+          <Picker.Item label="Electricity Infrastructure Damage" value="Electricity Infrastructure Damage" />
+          <Picker.Item label="Water Infrastructure Damage" value="Water Infrastructure Damage" />
+          <Picker.Item label="Public Infrastructure Damage" value="Public Infrastructure Damage" />
+          <Picker.Item label="Graffiti" value="Graffiti" />
+          <Picker.Item label="Vandalism" value="Vandalism" />
         </Picker>
-        <Button title="Upload Image" onPress={pickImage} />
+        <Text style={styles.label}>Urgency Level:</Text>
+        <View style={styles.urgencyContainer}>
+          {['Low', 'Medium', 'High'].map((level) => (
+            <TouchableOpacity
+              key={level}
+              style={[styles.urgencyButton, urgency === level && styles.selectedUrgency]}
+              onPress={() => selectUrgency(level)}
+            >
+              <Text style={styles.urgencyText}>{level}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Button title="Upload Image from Library" onPress={pickImage} />
+        <Button title="Take Photo" onPress={takePhoto} />
         {/* Show image preview or indication */}
         <Button title="Submit" onPress={handleSubmit} />
         <Button title="Cancel" onPress={handleCancel} color="#ff5c5c" />
@@ -226,6 +260,27 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  urgencyContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 10,
+  },
+  urgencyButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#aaa',
+  },
+  selectedUrgency: {
+    backgroundColor: '#ddd',
+  },
+  urgencyText: {
+    textAlign: 'center',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 20,
   },
 });
 
