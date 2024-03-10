@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Ensure you have installed react-native-vector-icons
+import { useNavigation } from '@react-navigation/native';
+
 
 const HelpAndFeedbackScreen = ({ navigation }) => {
   // Example navigation function, replace with actual navigation logic
   const navigateToScreen = (screenName) => {
-    console.log(`Navigate to ${screenName}`); // Placeholder, use navigation.navigate(screenName) in a real app
+    navigation.navigate(screenName); // Placeholder, use navigation.navigate(screenName) in a real app
   };
 
   return (
@@ -28,6 +30,13 @@ const HelpAndFeedbackScreen = ({ navigation }) => {
         style={styles.settingRow} 
         onPress={() => navigateToScreen('CommunityStandards')}>
         <Text style={styles.label}>Community Standards</Text>
+        <Icon name="chevron-right" size={20} />
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.settingRow} 
+        onPress={() => navigateToScreen('Profile Setup')}>
+        <Text style={styles.label}>Profile Setup</Text>
         <Icon name="chevron-right" size={20} />
       </TouchableOpacity>
     </View>

@@ -7,7 +7,7 @@ const PotholeDetectionScreen = () => {
 
   useEffect(() => {
     // Threshold for detecting a jolt (adjust based on testing)
-    const joltThreshold = 20; // Example value, adjust based on actual testing
+    const joltThreshold = 20; // Initial value, adjust based on actual testing
 
     const subscription = accelerometer.subscribe(({ x, y, z }) => {
       const totalAcceleration = Math.sqrt(x * x + y * y + z * z);

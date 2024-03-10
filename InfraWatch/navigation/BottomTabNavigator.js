@@ -6,7 +6,10 @@ import ReportDetailsScreen from '../screens/ReportDetailsScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import SettingsScreen from '../screens/SettingsScreen';
-import HelpAndFeedbackScreen from '../screens/HealthandFeedbackScreen';
+import HealthAndFeedbackScreen from '../screens/HealthAndFeedbackScreen';
+import UserReportsScreen from '../screens/UserReportsScreen';
+import ReportsMapScreen from '../screens/ReportsMapScreen';
+import CommunityScreen from '../screens/CommunityScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -33,7 +36,7 @@ function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Interactive Map"
-        component={ReportDetailsScreen}
+        component={ReportsMapScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="plus-circle" size={size} color={color} />
@@ -42,7 +45,7 @@ function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Community"
-        component={WelcomeScreen}
+        component={CommunityScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="plus-circle" size={size} color={color} />
@@ -51,7 +54,7 @@ function BottomTabNavigator() {
       />
       <Tab.Screen
         name="Updates"
-        component={HelpAndFeedbackScreen}
+        component={HealthAndFeedbackScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="plus-circle" size={size} color={color} />

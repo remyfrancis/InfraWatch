@@ -1,23 +1,74 @@
-import React from 'react';
-import { Button, View, Text, StyleSheet, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Button, View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 //import Icon from 'react-native-vector-icons/FontAwesome';
 import { ScrollView } from 'react-native';
 import { Icon } from 'react-native-elements'
+import { auth, db } from '../firebaseConfig';
+import { getDatabase, ref, onValue } from "firebase/database";
+import * as Location from 'expo-location';
+
+
 
 function DashboardScreen({ navigation }) {
-  return (
-    <ScrollView style={styles.container}>
+
+    const [reports, setReports] = useState([]);
+    const [reportsSubmitted, setReportsSubmitted] = useState(0);
+    const [resolvedIssues, setResolvedIssues] = useState(0);
+    const [userId, setUserId] = useState('');
+    
+    const getReadableLocation = async (latitude, longitude) => {
+        try {
+            const results = await Location.reverseGeocodeAsync({ latitude, longitude });
+            if (results.length > 0) {
+            // Format the address as needed; here, we're using the first result
+            const { city, street, region, country } = results[0];
+            return `${street ? street + ', ' : ''}${city ? city + ', ' : ''}${region ? region + ', ' : ''}${country}`;
+            }
+        } catch (error) {
+            console.error("Failed to get location: ", error);
+        }
+        return "Location unavailable"; // Default text or handling when the location can't be fetched
+    };
+
+    useEffect(() => {
+        const user = auth.currentUser;
+        if(user) {
+            setUserId(user.uid);
+            const userProfileRef = ref(getDatabase(), `users/${user.uid}/profile`);
+
+            onValue(userProfileRef, async (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.userReports) {
+                    const reportsWithLocation = await Promise.all(Object.values(data.userReports).map(async report => {
+                      if(report.location) {
+                        const readableLocation = await getReadableLocation(report.location.latitude, report.location.longitude);
+                        return { ...report, readableLocation };
+                      }
+                      return report;
+                    }));
+                    setReports(reportsWithLocation);
+                    setReportsSubmitted(data.reportCount || 0);
+                }
+            });
+        }
+    }, [userId]);
+
+    return (
+        <ScrollView style={styles.container}>
+            
             {/* Top Row Split into 2 Columns */}
+            
             <View style={styles.topRow}>
                 <View style={styles.halfWidth}>
                     <Text style={styles.centerText}>Reports Submitted</Text>
-                    <Text style={styles.largeText}>10</Text>
+                    <Text style={styles.largeText}>{reportsSubmitted}</Text>
                 </View>
                 <View style={styles.halfWidth}>
                     <Text style={styles.centerText}>Resolved Issues</Text>
-                    <Text style={styles.largeText}>8</Text>
+                    <Text style={styles.largeText}>{resolvedIssues}</Text>
                 </View>
             </View>
+            
 
             {/* 2nd Row, 1 Full Width Column */}
             <View style={styles.fullWidth}>
@@ -25,19 +76,20 @@ function DashboardScreen({ navigation }) {
                 <Text style={styles.largeText}>1 day</Text>
             </View>
 
-            {/* 3rd Section: Report An Issue */}
+            {/* User Reports */}
             <View style={styles.reportSection}>
-                <Text style={styles.sectionTitle}>Report An Issue</Text>
-                {[...Array(4)].map((_, index) => (
+                <Text style={styles.sectionTitle}>Reports You've Made:</Text>
+                {reports.slice().reverse().map((report, index) => (
                     <View key={index} style={styles.issueRow}>
                         <View style={styles.issueTextContainer}>
-                            <Text style={styles.mediumText}>Issue {index + 1}</Text>
-                            <Text>Location, District</Text>
+                            <Text style={styles.mediumText}>{report.title || 'No Reports Yet!'}</Text>
+                            <Text>{report.readableLocation || 'Unknown Location'}</Text>
+                            <Text>{report.details || 'No details provided'}</Text>
                         </View>
                         <View style={styles.imageContainer}>
                             <Image
                                 style={styles.image}
-                                source={{ uri: 'https://placekitten.com/200/200' }} // Example image
+                                source={{ uri: report.imageUrl }} // Example image
                             />
                         </View>
                     </View>
@@ -47,9 +99,14 @@ function DashboardScreen({ navigation }) {
             <View>
                 <View style={styles.row}>
                     <Icon name="location-on" size={24} color="black" style={styles.icon} />
-                    <Text style={styles.title}>View on Map </Text>
+                    <Text style={styles.title}>View Map </Text>
                     <Icon name="chevron-right" size={24} color="black" style={styles.rightIcon} />
                 </View>
+                <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('User Reports')}>
+                    <Icon name="location-on" size={24} color="black" style={styles.icon} />
+                    <Text style={styles.title}>See All My Reports </Text>
+                    <Icon name="chevron-right" size={24} color="black" style={styles.rightIcon} />
+                </TouchableOpacity>
                 <View style={styles.row}>
                     <Icon name="chat-bubble-outline" size={24} color="black" style={styles.icon} />
                     <Text style={styles.title}>Community Feedback </Text>
@@ -57,7 +114,7 @@ function DashboardScreen({ navigation }) {
                 </View>
                 <View style={styles.row}>
                     <Icon name="notifications-none" size={24} color="black" style={styles.icon} />
-                    <Text style={styles.title}>Updates </Text>
+                    <Text style={styles.title}>Notifications </Text>
                     <Icon name="chevron-right" size={24} color="black" style={styles.rightIcon} />
                 </View>
             </View>

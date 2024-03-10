@@ -1,25 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { useReportData } from '../context/DataContext';
+import { useNavigation } from '@react-navigation/native';
 
-function MapComponent({ onLocationSelected }) {
-  const { reportData, setMarkerPosition } = useReportData();
-
-
-  // Implement map functionality
-  const handlePress = (e) => {
-    const location = e.nativeEvent.coordinate;
-    setMarkerPosition(location);
-  };
-
-  const handleLocationSelected = (location) => {
-    setMarkerPosition(location);
-    //navigation.navigate('ReportDetails', { location });
-  };
-
-  const [location, setLocation] = useState(null);
+function MapComponent({ reports, navigation }) {
+  const [currentLocation, setCurrentLocation] = useState(null);
+  //const navigation = useNavigation();
+  
 
   useEffect(() => {
     (async () => {
@@ -29,23 +17,33 @@ function MapComponent({ onLocationSelected }) {
         return;
       }
 
-      let currentLocation = await Location.getCurrentPositionAsync({});
-      setLocation({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-        latitudeDelta: 0.2, 
-        longitudeDelta: 0.2,
+      let location = await Location.getCurrentPositionAsync({});
+      setCurrentLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.0922, // Adjust these values as needed
+        longitudeDelta: 0.0421,
       });
     })();
   }, []);
 
   return (
     <View style={styles.container}>
-      {reportData.location && (
-        <MapView style={styles.map} initialRegion={reportData.location} onPress={handlePress}>
-          {reportData.markerPosition && <Marker coordinate={reportData.markerPosition} />}
+          <MapView
+            style={styles.map}
+            initialRegion={currentLocation}
+            showsUserLocation={true}
+          >
+          {reports.filter(report => report.location && report.location.latitude && report.location.longitude).map((report, index) => (
+            <Marker
+              key={index}
+              coordinate={{ latitude: report.location.latitude, longitude: report.location.longitude }}
+              title={report.title}
+              description={report.details}
+              onPress={() => navigation.navigate('Report Details', { report })}
+            />
+          ))}
         </MapView>
-      )}
     </View>
   );
 }
@@ -53,10 +51,7 @@ function MapComponent({ onLocationSelected }) {
 
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    height: 300,
-  },
+
   map: {
     width: '100%',
     height: '100%',

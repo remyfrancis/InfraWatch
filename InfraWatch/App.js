@@ -1,23 +1,42 @@
-import { StatusBar } from 'expo-status-bar';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { useFonts } from 'expo-font';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './navigation/AppNavigator';
-import { ScrollView } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DataProvider } from './context/DataContext';
+import { db, auth } from './firebaseConfig';
+import AuthScreen from './screens/AuthScreen';
+
 
 
 export default function App() {
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-  // const [fontsLoaded] = useFonts({
-  //   'Inter-Black': require('./assets/fonts/Inter.ttc'),
-  // });
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  if(loading) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+      </View>
+    )
+  }
 
   return (
     <DataProvider>
       <NavigationContainer>
-        <AppNavigator />
+        {user ? <AppNavigator /> : <AuthScreen />}
       </NavigationContainer>
     </DataProvider>
   );
@@ -29,6 +48,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    fontFamily: 'Inter'
   },
 });
