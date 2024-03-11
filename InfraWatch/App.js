@@ -15,13 +15,7 @@ export default function App() {
   const [user, setUser] = useState(null);
 
 
-  // const [loaded] = useFonts({
-  //   Inter: require("@tamagui/font-inter/otf/Inter-Medium.otf"),
-  //   InterBold: require("@tamagui/font-inter/otf/Inter-Bold.otf"),
-  // });
-  // if (!loaded) {
-  //   return null;
-  // }
+
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {

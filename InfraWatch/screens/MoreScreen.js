@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/FontAwesome'; // Ensure you have ins
 import { useNavigation } from '@react-navigation/native';
 
 
-const HelpAndFeedbackScreen = ({ navigation }) => {
+const MoreScreen = ({ navigation }) => {
   // Example navigation function, replace with actual navigation logic
   const navigateToScreen = (screenName) => {
     navigation.navigate(screenName); // Placeholder, use navigation.navigate(screenName) in a real app
@@ -12,27 +12,6 @@ const HelpAndFeedbackScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
-        style={styles.settingRow} 
-        onPress={() => navigateToScreen('ReportAProblem')}>
-        <Text style={styles.label}>Report A Problem</Text>
-        <Icon name="chevron-right" size={20} />
-      </TouchableOpacity>
-      
-      <TouchableOpacity 
-        style={styles.settingRow} 
-        onPress={() => navigateToScreen('FAQs')}>
-        <Text style={styles.label}>FAQs</Text>
-        <Icon name="chevron-right" size={20} />
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={styles.settingRow} 
-        onPress={() => navigateToScreen('CommunityStandards')}>
-        <Text style={styles.label}>Community Standards</Text>
-        <Icon name="chevron-right" size={20} />
-      </TouchableOpacity>
-
       <TouchableOpacity 
         style={styles.settingRow} 
         onPress={() => navigateToScreen('Profile Setup')}>
@@ -68,4 +47,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HelpAndFeedbackScreen;
+export default MoreScreen;

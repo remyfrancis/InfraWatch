@@ -1,6 +1,6 @@
 // ProfileSetupScreen.js
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Text } from 'react-native';
+import { View, ScrollView, TextInput, Button, StyleSheet, Alert, TouchableOpacity, Text } from 'react-native';
 import { Picker } from '@react-native-picker/picker'
 import { auth, db } from '../firebaseConfig';
 import { ref, update, get } from "firebase/database";
@@ -74,10 +74,10 @@ const ProfileSetupScreen = ({ navigation }) => {
 };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <TextInput
         style={styles.input}
-        placeholder="Name"
+        placeholder="Full Name"
         value={name}
         onChangeText={setName}
       />
@@ -94,17 +94,15 @@ const ProfileSetupScreen = ({ navigation }) => {
         value={address}
         onChangeText={setAddress}
       />
-      <Button
-        title="Save Profile"
-        onPress={handleSaveProfile}
-      />
       <View style={styles.checkboxContainer}>
-        <TouchableOpacity onPress={() => setIsAdmin(!isAdmin)} style={styles.checkbox}>
+        <Text style={styles.checkboxLabel}>Are you an authority?</Text>
+        <TouchableOpacity
+          style={[styles.checkbox, isAdmin ? styles.checkboxChecked : null]}
+          onPress={() => setIsAdmin(!isAdmin)}
+        >
           {isAdmin && <View style={styles.checkboxInner} />}
         </TouchableOpacity>
-        <Text style={styles.checkboxLabel}>Are you an authority?</Text>
       </View>
-      
       {isAdmin && (
         <>
           <TextInput
@@ -113,65 +111,91 @@ const ProfileSetupScreen = ({ navigation }) => {
             value={authorityName}
             onChangeText={setAuthorityName}
           />
-          <Text style={styles.label}>Specialization:</Text>
           <Picker
             selectedValue={specialization}
             style={styles.picker}
-            onValueChange={(itemValue, itemIndex) => setSpecialization(itemValue)}>
+            onValueChange={(itemValue) => setSpecialization(itemValue)}
+          >
             {specializations.map(specialization => (
               <Picker.Item key={specialization} label={specialization} value={specialization} />
             ))}
           </Picker>
         </>
       )}
-    </View>
+      <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
+        <Text style={styles.saveButtonText}>Save Profile</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    alignItems: 'center',
+    flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
   },
   input: {
     width: '100%',
-    marginVertical: 10,
+    marginVertical: 8,
     padding: 15,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#ccc',
     borderRadius: 5,
+    backgroundColor: '#fff',
+  },
+  picker: {
+    width: '100%',
+    marginVertical: 8,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    backgroundColor: '#fff',
   },
   checkboxContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
     marginVertical: 10,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 1,
-    borderColor: '#000',
-    alignItems: 'center',
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: '#777',
     justifyContent: 'center',
-    marginRight: 10,
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#007BFF', // or any color you prefer for checked state
   },
   checkboxInner: {
-    width: 14,
-    height: 14,
-    backgroundColor: '#000',
+    width: 12,
+    height: 12,
+    backgroundColor: '#fff',
   },
   checkboxLabel: {
     fontSize: 16,
   },
-  picker: {
-    width: '100%',
-    marginVertical: 10,
-  },
   label: {
     alignSelf: 'flex-start',
-    marginTop: 20,
+    marginVertical: 8,
+  },
+  saveButton: {
+    backgroundColor: '#0353A4', // Use your app's theme color or any color of choice
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    width: '100%', // Ensure the button is as wide as the input fields
+    alignItems: 'center', // Center the text horizontally
+    marginTop: 10, // Add some margin at the top to separate it from the fields above
+  },
+  saveButtonText: {
+    color: '#FFFFFF', // White color for the text to contrast the button's background color
+    fontSize: 16,
+    fontWeight: 'bold', // Optional: make the text bold
   },
 });
 

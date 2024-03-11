@@ -194,7 +194,6 @@ function ReportIssueScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/*<MapComponent />*/}
       <ScrollView style={styles.scrollView}>
         <TextInput
           style={styles.input}
@@ -203,7 +202,7 @@ function ReportIssueScreen({ navigation }) {
           onChangeText={setReportTitle}
         />
         <TextInput
-          style={styles.input}
+          style={styles.textArea}
           placeholder="Report Details"
           multiline
           numberOfLines={4}
@@ -233,11 +232,23 @@ function ReportIssueScreen({ navigation }) {
             </TouchableOpacity>
           ))}
         </View>
-        <Button title="Upload Image from Library" onPress={pickImage} />
-        <Button title="Take Photo" onPress={takePhoto} />
-        {/* Show image preview or indication */}
-        <Button title="Submit" onPress={handleSubmit} />
-        <Button title="Cancel" onPress={handleCancel} color="#ff5c5c" />
+        <View style={styles.buttonRow}>
+          <TouchableOpacity style={styles.button} onPress={pickImage}>
+            <Text style={styles.buttonText}>Upload Image from Library</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={takePhoto}>
+            <Text style={styles.buttonText}>Take Photo</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.buttonRow}>
+          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+            <Text style={styles.buttonText}>Submit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -246,41 +257,110 @@ function ReportIssueScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
-  },
-  input: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-  },
-  picker: {
-    height: 50,
-    width: '100%',
+    padding: 20,
+    backgroundColor: '#fff', // Change as necessary
   },
   scrollView: {
-    flex: 1,
+    width: '100%',
   },
-  urgencyContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginVertical: 10,
-  },
-  urgencyButton: {
-    padding: 10,
+  input: {
+    backgroundColor: '#f0f0f0', // Light gray background
+    marginBottom: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 5,
     borderWidth: 1,
-    borderColor: '#aaa',
+    borderColor: '#ccc', // Light gray border
+    fontSize: 16,
   },
-  selectedUrgency: {
-    backgroundColor: '#ddd',
+  textArea: {
+    backgroundColor: '#f0f0f0', // Light gray background
+    marginVertical: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 10, // Increased padding for better visual spacing
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ccc', // Light gray border
+    fontSize: 16,
+    height: 120, // Set an initial height
+    textAlignVertical: 'top', // Aligns text to the top
   },
-  urgencyText: {
-    textAlign: 'center',
+  picker: {
+    backgroundColor: '#f0f0f0',
+    marginBottom: 15,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 20,
+    marginBottom: 8,
+  },
+  urgencyContainer: {
+    marginBottom: 15,
+    flexDirection: 'column', // Each button occupies its own line
+  },
+  urgencyButton: {
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    alignItems: 'center',
+  },
+  selectedUrgency: {
+    backgroundColor: '#006DAA', // A slightly darker background for selected urgency
+  },
+  urgencyText: {
+    fontSize: 16,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  button: {
+    backgroundColor: '#0353A4',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    width: '48%', // Adjust as necessary
+    alignItems: 'center', // This aligns items (including text) horizontally in the center.
+    justifyContent: 'center', // This aligns items (including text) vertically in the center.
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center', // Ensures text is centered, useful if text wraps to a new line.
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  submitButton: {
+    backgroundColor: '#1B065E', // The desired color for the Submit button
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    width: '48%', // To ensure it aligns with the layout of other buttons
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    width: '48%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1, // Optional: add a border to make the button more visible
+    borderColor: '#ccc', // Color for the border
+  },
+  cancelButtonText: {
+    color: '#000', // Black text color
+    fontSize: 16,
   },
 });
 

@@ -7,6 +7,7 @@ import UserReportsScreen from '../screens/UserReportsScreen';
 import ReportsMapScreen from '../screens/ReportsMapScreen';
 import ReportEditScreen from '../screens/ReportEditScreen';
 import AuthorityDashboard from '../screens/AuthorityDashboardScreen';
+import MappedReportScreen from '../screens/MappedReportScreen';
 
 
 
@@ -23,6 +24,7 @@ function AppNavigator() {
         <Stack.Screen name="ReportEditScreen" component={ReportEditScreen} />
         <Stack.Screen name="Authority Dashboard" component={AuthorityDashboard} />
         <Stack.Screen name="ReportIssueScreen" component={ReportIssueScreen} />
+        <Stack.Screen name="Mapped Report" component={MappedReportScreen} />
     </Stack.Navigator>
   );
 }

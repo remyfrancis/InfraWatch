@@ -95,11 +95,11 @@ function DashboardScreen({ navigation }) {
             
             <View style={styles.topRow}>
                 <View style={styles.halfWidth}>
-                    <Text style={styles.centerText}>Reports Submitted</Text>
+                    <Text style={styles.tiledHeadings}>Reports Submitted</Text>
                     <Text style={styles.largeText}>{reportsSubmitted}</Text>
                 </View>
                 <View style={styles.halfWidth}>
-                    <Text style={styles.centerText}>Resolved Issues</Text>
+                    <Text style={styles.tiledHeadings}>Resolved Issues</Text>
                     <Text style={styles.largeText}>{resolvedIssues}</Text>
                 </View>
             </View>
@@ -132,21 +132,11 @@ function DashboardScreen({ navigation }) {
             </View>
 
             <View>
-                <View style={styles.row}>
-                    <Icon name="location-on" size={24} color="black" style={styles.icon} />
-                    <Text style={styles.title}>View Map </Text>
-                    <Icon name="chevron-right" size={24} color="black" style={styles.rightIcon} />
-                </View>
                 <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('User Reports')}>
                     <Icon name="location-on" size={24} color="black" style={styles.icon} />
                     <Text style={styles.title}>See All My Reports </Text>
                     <Icon name="chevron-right" size={24} color="black" style={styles.rightIcon} />
                 </TouchableOpacity>
-                <View style={styles.row}>
-                    <Icon name="chat-bubble-outline" size={24} color="black" style={styles.icon} />
-                    <Text style={styles.title}>Community Feedback </Text>
-                    <Icon name="chevron-right" size={24} color="black" style={styles.rightIcon} />
-                </View>
                 <View style={styles.row}>
                     <Icon name="notifications-none" size={24} color="black" style={styles.icon} />
                     <Text style={styles.title}>Notifications </Text>
@@ -161,11 +151,12 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 10,
+        backgroundColor: '#fff'
     },
     icon: {
         width: 30, // Set a specific width
         height: 30,
-        backgroundColor: '#F3EEE7', // Set background color
+        backgroundColor: '#B9D6F2', // Set background color
         borderRadius: 10, // Rounded corners
         justifyContent: 'center', // Center the icon (if using a View wrapper)
         alignItems: 'center', // Center the icon (if using a View wrapper)
@@ -177,7 +168,7 @@ const styles = StyleSheet.create({
     halfWidth: {
         flex: 1,
         justifyContent: 'center',
-        backgroundColor: '#F3EEE7', // Set background color
+        backgroundColor: '#B9D6F2', // Set background color
         borderRadius: 10, // Rounded corners
         margin: 5, // Add some margin to see the rounded corners effect
         padding: 10, // Add some padding to see the rounded corners effect
@@ -187,7 +178,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 10,
         marginBottom: 10,
-        backgroundColor: '#F3EEE7', // Set background color
+        backgroundColor: '#B9D6F2', // Set background color
         borderRadius: 10, // Rounded corners
         marginVertical: 5, // Add vertical margin to separate from other elements
     },
@@ -202,7 +193,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
     },
-    centerText: {
+    tiledHeadings: {
         fontSize: 16,
         fontWeight: 'bold',
     },

@@ -6,7 +6,7 @@ import ReportDetailsScreen from '../screens/ReportDetailsScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import SettingsScreen from '../screens/SettingsScreen';
-import HealthAndFeedbackScreen from '../screens/HealthAndFeedbackScreen';
+import MoreScreen from '../screens/MoreScreen';
 import UserReportsScreen from '../screens/UserReportsScreen';
 import ReportsMapScreen from '../screens/ReportsMapScreen';
 import CommunityScreen from '../screens/CommunityScreen';
@@ -30,7 +30,7 @@ function BottomTabNavigator() {
         component={ReportIssueScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="plus-circle" size={size} color={color} />
+            <Icon name="edit" size={size} color={color} />
           ),
         }}
       />
@@ -39,7 +39,7 @@ function BottomTabNavigator() {
         component={ReportsMapScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="plus-circle" size={size} color={color} />
+            <Icon name="map" size={size} color={color} />
           ),
         }}
       />
@@ -48,16 +48,16 @@ function BottomTabNavigator() {
         component={CommunityScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="plus-circle" size={size} color={color} />
+            <Icon name="group" size={size} color={color} />
           ),
         }}
       />
       <Tab.Screen
-        name="Updates"
-        component={HealthAndFeedbackScreen}
+        name="More"
+        component={MoreScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="plus-circle" size={size} color={color} />
+            <Icon name="ellipsis-h" size={size} color={color} />
           ),
         }}
       />

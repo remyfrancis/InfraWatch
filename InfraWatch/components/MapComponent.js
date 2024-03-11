@@ -40,7 +40,10 @@ function MapComponent({ reports, navigation }) {
               coordinate={{ latitude: report.location.latitude, longitude: report.location.longitude }}
               title={report.title}
               description={report.details}
-              onPress={() => navigation.navigate('Report Details', { report })}
+              onPress={() => {
+                console.log(report);
+                navigation.navigate('Mapped Report', { report })
+              }}
             />
           ))}
         </MapView>
